@@ -53,12 +53,14 @@ int main() {
     // disable JTAG to get pins back
     DDPCONbits.JTAGEN = 0;
 
-    // do your TRIS and LAT commands here
+    TRISBbits.TRISB10 = 0;
+    LATBbits.LATB10 = 1;
 
     __builtin_enable_interrupts();
 
     while(1) {
-	    // use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
-		  // remember the core timer runs at half the CPU speed
+        /*_CP0_SET_COUNT(0);
+        while(_CP0_GET_COUNT() < 2400) {;}
+        LATBINV = 0b10000000000;*/
     }
 }
