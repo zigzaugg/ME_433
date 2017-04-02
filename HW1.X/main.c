@@ -53,14 +53,18 @@ int main() {
     // disable JTAG to get pins back
     DDPCONbits.JTAGEN = 0;
 
-    TRISBbits.TRISB10 = 0;
-    LATBbits.LATB10 = 1;
+    TRISAbits.TRISA4 = 0;
+    LATAbits.LATA4 = 1;
+    
+    TRISBbits.TRISB4 = 1;
 
     __builtin_enable_interrupts();
 
     while(1) {
-        /*_CP0_SET_COUNT(0);
-        while(_CP0_GET_COUNT() < 2400) {;}
-        LATBINV = 0b10000000000;*/
+        _CP0_SET_COUNT(0);
+        while(_CP0_GET_COUNT() < 2400) {
+            while(PORTBbits.RB4 == 1){;}
+        }
+        LATAbits.LATA4 = !LATAbits.LATA4;
     }
 }
