@@ -353,7 +353,7 @@ UsedLibrary="HW2.lbr"
 Type="Schematic Editor"
 Loc="0 -22 1199 577"
 State=0
-Number=3
+Number=2
 File="HW2.sch"
 View="-97.1211 -43.7871 75.0231 89.0414"
 WireWidths=" 0 0.3048 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0.4064 0.1524"
@@ -398,11 +398,11 @@ Sheet="1"
 
 [Win_2]
 Type="Control Panel"
-Loc="19 59 1218 658"
+Loc="711 130 1910 729"
 State=2
 Number=0
 
 [Desktop]
-Screen="640 480"
+Screen="1440 900"
 Window="Win_1"
 Window="Win_2"
