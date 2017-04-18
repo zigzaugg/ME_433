@@ -1,6 +1,7 @@
 #include <xc.h>           // processor SFR definitions
 #include <sys/attribs.h>  // __ISR macro
-#include <math.h>
+#include <stdio.h>
+#include "ili9163c.h"
 
 // DEVCFG0
 #pragma config DEBUG = 0b10 // no debugging
@@ -37,16 +38,14 @@
 #pragma config FUSBIDIO = 1 // USB pins controlled by USB module
 #pragma config FVBUSONIO = 1 // USB BUSON controlled by USB module
 
+#define BCKGND MAGENTA
+#define TXT YELLOW
 
-#define CS LATAbits.LATA0
-
-void setVoltage(unsigned char channel, unsigned char voltage);
-unsigned char spi_io(unsigned char o);
-void spi_init();
-
+void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color);
+void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color);
 
 int main() {
-
+    
     __builtin_disable_interrupts();
 
     // set the CP0 CONFIG register to indicate that kseg0 is cacheable (0x3)
@@ -60,71 +59,43 @@ int main() {
 
     // disable JTAG to get pins back
     DDPCONbits.JTAGEN = 0;
-
-    spi_init();
+    
+    SPI1_init()
+            
+    LCD_init()
+            
     __builtin_enable_interrupts();
 
-    int ii;
-    unsigned char Sawfunc[200], Sinfunc[200];
-    float temp;
-    
-    for(ii=1; ii<200; ii++){
-        Sinfunc[ii]= (127+127*sin(3.14159*((double)ii)/50));
-        Sawfunc[ii]= (255.0*ii/200.0);
-    }
-    
-    ii=0;
-    while(1) {
-        _CP0_SET_COUNT(0);
-        ii++;
-        if(ii > 200){
-            ii= 0;
-        }
-        while(_CP0_GET_COUNT() < 24000) {
-            setVoltage(0, Sinfunc[ii]);
-            setVoltage(1, Sawfunc[ii]);
-        }
-        
+    while(1){
+
     }
 }
 
-unsigned char spi_io(unsigned char o) {
-  SPI1BUF = o;
-  while(!SPI1STATbits.SPIRBF) { // wait to receive the byte
-    ;
-  }
-  return SPI1BUF;
+void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color){
+    int bitMap[5] = ASCII[c-0x20];
+    int ii, jj;
+    for(ii = 0; ii<5; ii++){
+        for(jj = 0; jj<8; jj++){
+            int x = x0+ii;
+            int y = y0+jj;
+            if (x<128 && y<128){
+                if((bitMap[ii]>>jj)&1==1){
+                    LCD_drawPixel(x, y, color);
+                } else {
+                    LCD_drawPixel(x, y, BCKGND);
+                }
+            }
+        }
+    }
 }
 
-void spi_init(){
-    TRISAbits.TRISA0 = 0;
-    CS = 1;
-    
-    RPA1Rbits.RPA1R = 0b0011; //SDO
-    
-    // setup spi1 ????TODO
-    SPI1CON = 0;              // turn off the spi module and reset it
-    SPI1BUF;                  // clear the rx buffer by reading from it
-    SPI1BRG = 0x3;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1]
-    SPI1STATbits.SPIROV = 0;  // clear the overflow bit
-    SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
-    SPI1CONbits.MSTEN = 1;    // master operation
-    SPI1CONbits.ON = 1;       // turn on spi 4
-      
+void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color){
+    int ii=0;
+    while(s[ii]){
+        drawChar(x0+ii*6, y0, s[ii], color);
+    }
 }
 
-void setVoltage(unsigned char channel, unsigned char voltage){
+void drawBar(unsigned short x0, unsigned short y0, short len, unsigned short color){
     
-    unsigned char one, two;
-    one = 0b01110000;
-    two = 0b00000000;
-    
-    one += channel<<7;//set channel
-    one += voltage>>4; //set first half of voltage
-    two = (voltage&0b1111)<<4; //set second half of voltage
-    
-    CS = 0;
-    spi_io(one);
-    spi_io(two);
-    CS = 1;
 }

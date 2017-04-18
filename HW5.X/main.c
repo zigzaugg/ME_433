@@ -1,6 +1,6 @@
 #include <xc.h>           // processor SFR definitions
 #include <sys/attribs.h>  // __ISR macro
-#include <math.h>
+#include "i2c.h"
 
 // DEVCFG0
 #pragma config DEBUG = 0b10 // no debugging
@@ -38,15 +38,14 @@
 #pragma config FVBUSONIO = 1 // USB BUSON controlled by USB module
 
 
-#define CS LATAbits.LATA0
+#define EXPADR 0b0100111
 
-void setVoltage(unsigned char channel, unsigned char voltage);
-unsigned char spi_io(unsigned char o);
-void spi_init();
-
+void init_expander(void);
+void setExpander(char pin, char level, char old);
+char getExpander(void);
 
 int main() {
-
+    
     __builtin_disable_interrupts();
 
     // set the CP0 CONFIG register to indicate that kseg0 is cacheable (0x3)
@@ -60,71 +59,63 @@ int main() {
 
     // disable JTAG to get pins back
     DDPCONbits.JTAGEN = 0;
-
-    spi_init();
+    
+    init_expander();
     __builtin_enable_interrupts();
 
-    int ii;
-    unsigned char Sawfunc[200], Sinfunc[200];
-    float temp;
-    
-    for(ii=1; ii<200; ii++){
-        Sinfunc[ii]= (127+127*sin(3.14159*((double)ii)/50));
-        Sawfunc[ii]= (255.0*ii/200.0);
-    }
-    
-    ii=0;
-    while(1) {
-        _CP0_SET_COUNT(0);
-        ii++;
-        if(ii > 200){
-            ii= 0;
-        }
-        while(_CP0_GET_COUNT() < 24000) {
-            setVoltage(0, Sinfunc[ii]);
-            setVoltage(1, Sawfunc[ii]);
-        }
+    while(1){
+        char r = getExpander();
         
+        if (r & 0b1<<7 == 0b1<<7){
+            setExpander(0, 1, r);
+        } else {
+            setExpander(0, 0, r);
+        }
     }
 }
 
-unsigned char spi_io(unsigned char o) {
-  SPI1BUF = o;
-  while(!SPI1STATbits.SPIRBF) { // wait to receive the byte
-    ;
-  }
-  return SPI1BUF;
+void init_expander(){
+    ANSELBbits.ANSB2 = 0;
+    ANSELBbits.ANSB3 = 0;
+    i2c_master_setup();   
+    
+    i2c_master_start();
+    i2c_master_send(EXPADR<<1|0); // write the address, or'ed with a 0 to indicate writing
+    i2c_master_send(0x00); // the register to write to
+    i2c_master_send(0b11110000); // the value to put in the register
+    i2c_master_stop();
+    
+    i2c_master_start();
+    i2c_master_send(EXPADR<<1|0); // write the address, or'ed with a 0 to indicate writing
+    i2c_master_send(0x06); // the register to write to
+    i2c_master_send(0b11110000); // the value to put in the register
+    i2c_master_stop();
 }
 
-void spi_init(){
-    TRISAbits.TRISA0 = 0;
-    CS = 1;
+void setExpander(char pin, char level, char old){
+    char newval;
+    if (level == 1){
+        newval = old | 1<<pin;
+    } else {
+        newval = old & (0b11111111 ^ (1<<pin));
+    }
     
-    RPA1Rbits.RPA1R = 0b0011; //SDO
-    
-    // setup spi1 ????TODO
-    SPI1CON = 0;              // turn off the spi module and reset it
-    SPI1BUF;                  // clear the rx buffer by reading from it
-    SPI1BRG = 0x3;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1]
-    SPI1STATbits.SPIROV = 0;  // clear the overflow bit
-    SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
-    SPI1CONbits.MSTEN = 1;    // master operation
-    SPI1CONbits.ON = 1;       // turn on spi 4
-      
+    i2c_master_start();
+    i2c_master_send(EXPADR<<1|0); // write the address, or'ed with a 0 to indicate writing
+    i2c_master_send(0x09); // the register to write to
+    i2c_master_send(newval); // the value to put in the register
+    i2c_master_stop();
 }
 
-void setVoltage(unsigned char channel, unsigned char voltage){
+char getExpander(void){
+    i2c_master_start(); // make the start bit
+    i2c_master_send(EXPADR<<1|0); // write the address, shifted left by 1, or'ed with a 0 to indicate writing
+    i2c_master_send(0x09); // the register to read from
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send(EXPADR<<1|1); // write the address, shifted left by 1, or'ed with a 1 to indicate reading
+    char r = i2c_master_recv(); // save the value returned
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop(); // make the stop bit
     
-    unsigned char one, two;
-    one = 0b01110000;
-    two = 0b00000000;
-    
-    one += channel<<7;//set channel
-    one += voltage>>4; //set first half of voltage
-    two = (voltage&0b1111)<<4; //set second half of voltage
-    
-    CS = 0;
-    spi_io(one);
-    spi_io(two);
-    CS = 1;
+    return r;
 }
