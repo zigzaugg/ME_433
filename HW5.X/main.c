@@ -41,7 +41,7 @@
 #define EXPADR 0b0100111
 
 void init_expander(void);
-void setExpander(char pin, char level, char old);
+void setExpander(char pin, char level);
 char getExpander(void);
 
 int main() {
@@ -63,20 +63,24 @@ int main() {
     init_expander();
     __builtin_enable_interrupts();
 
+    char r;
     while(1){
-        char r = getExpander();
+        r = getExpander();
         
-        if (r & 0b1<<7 == 0b1<<7){
-            setExpander(0, 1, r);
+        if ((r>>7)&1){
+            setExpander(0, 1);
         } else {
-            setExpander(0, 0, r);
+            setExpander(0, 0);
         }
+      
     }
 }
 
 void init_expander(){
+    
     ANSELBbits.ANSB2 = 0;
     ANSELBbits.ANSB3 = 0;
+    
     i2c_master_setup();   
     
     i2c_master_start();
@@ -92,13 +96,14 @@ void init_expander(){
     i2c_master_stop();
 }
 
-void setExpander(char pin, char level, char old){
-    char newval;
-    if (level == 1){
+void setExpander(char pin, char level){ //NOT MODULAR
+    char newval = level<<pin;
+    
+    /*if (level){
         newval = old | 1<<pin;
     } else {
         newval = old & (0b11111111 ^ (1<<pin));
-    }
+    }*/
     
     i2c_master_start();
     i2c_master_send(EXPADR<<1|0); // write the address, or'ed with a 0 to indicate writing
@@ -107,7 +112,7 @@ void setExpander(char pin, char level, char old){
     i2c_master_stop();
 }
 
-char getExpander(void){
+char getExpander(){
     i2c_master_start(); // make the start bit
     i2c_master_send(EXPADR<<1|0); // write the address, shifted left by 1, or'ed with a 0 to indicate writing
     i2c_master_send(0x09); // the register to read from
