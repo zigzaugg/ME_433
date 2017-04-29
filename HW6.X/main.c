@@ -38,6 +38,8 @@
 #pragma config FUSBIDIO = 1 // USB pins controlled by USB module
 #pragma config FVBUSONIO = 1 // USB BUSON controlled by USB module
 
+#define LED LATAbits.LATA4 
+#define PUSH_BUTTON PORTBbits.RB4
 #define BCKGND MAGENTA
 #define TXT YELLOW
 
@@ -45,6 +47,9 @@ void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color
 void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color);
 
 int main() {
+    TRISAbits.TRISA4=0;
+    TRISBbits.TRISB4=1;
+    LED = 0;
     
     __builtin_disable_interrupts();
 
@@ -60,26 +65,40 @@ int main() {
     // disable JTAG to get pins back
     DDPCONbits.JTAGEN = 0;
     
-    SPI1_init()
-            
-    LCD_init()
-            
+    SPI1_init();
+    LCD_init();
+       
     __builtin_enable_interrupts();
 
+    LCD_clearScreen(BCKGND);
+    char buff[20];
+    int ii;
+   
     while(1){
-
+        _CP0_SET_COUNT(0);
+        for(ii = -50; ii<51; ii++ ){
+            sprintf(buff, "Hello world %d!  ", ii+50);
+            drawString(28, 32, buff, BLUE);
+            drawBar(64, 70, ii, BLUE);
+            int fps = 40000000/_CP0_GET_COUNT();
+            sprintf(buff, "%d fps", fps);
+            drawString(85, 100, buff, BLUE);
+            while(_CP0_GET_COUNT() < 8000000) {;}
+            _CP0_SET_COUNT(0);
+            
+        }
+        
     }
 }
 
 void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color){
-    int bitMap[5] = ASCII[c-0x20];
     int ii, jj;
     for(ii = 0; ii<5; ii++){
         for(jj = 0; jj<8; jj++){
             int x = x0+ii;
             int y = y0+jj;
             if (x<128 && y<128){
-                if((bitMap[ii]>>jj)&1==1){
+                if((ASCII[c-0x20][ii]>>jj)&1){
                     LCD_drawPixel(x, y, color);
                 } else {
                     LCD_drawPixel(x, y, BCKGND);
@@ -92,10 +111,21 @@ void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color
 void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color){
     int ii=0;
     while(s[ii]){
-        drawChar(x0+ii*6, y0, s[ii], color);
+        char c = s[ii];
+        drawChar(x0+ii*6, y0, c, color);
+        ii++;
     }
 }
 
 void drawBar(unsigned short x0, unsigned short y0, short len, unsigned short color){
-    
+    int ii, jj;
+    for (ii= 1; ii<128; ii++){
+        for(jj = y0; jj<(y0+8); jj++){
+            if(((len>0)&&(ii<x0+len)&&(ii>x0))||(len<0)&&(ii<x0)&&(ii>x0+len)){
+                LCD_drawPixel(ii, jj, color);
+            }else{
+                LCD_drawPixel(ii, jj, BCKGND);
+            }
+        }
+    }
 }
