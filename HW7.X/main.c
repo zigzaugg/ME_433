@@ -1,6 +1,7 @@
 #include <xc.h>           // processor SFR definitions
 #include <sys/attribs.h>  // __ISR macro
 #include <stdio.h>
+#include "i2c.h"
 #include "ili9163c.h"
 
 // DEVCFG0
@@ -42,9 +43,14 @@
 #define PUSH_BUTTON PORTBbits.RB4
 #define BCKGND MAGENTA
 #define TXT YELLOW
+#define SLVADR 0b1101011
 
+void init_gyro(void);
+void setExpander(char pin, char level);
+char getValue(char r);
 void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color);
 void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color);
+void drawBar(unsigned short x0, unsigned short y0, short len, unsigned short color);
 
 int main() {
     TRISAbits.TRISA4=0;
@@ -67,27 +73,68 @@ int main() {
     
     SPI1_init();
     LCD_init();
-       
+    
+    ANSELBbits.ANSB2 = 0;
+    ANSELBbits.ANSB3 = 0;
+    
+    i2c_master_setup();
+    
     __builtin_enable_interrupts();
 
-    LCD_clearScreen(BCKGND);
     char buff[20];
-    int ii;
-   
+    char r;
+    LCD_clearScreen(BCKGND);
+    
+    
+    /*r = getValue();
+    sprintf(buff, "who: %i", r);
+    drawString(45, 45, buff, BLUE);
+    LED = 1;*/
+    
     while(1){
-        _CP0_SET_COUNT(0);
-        for(ii = -50; ii<51; ii++ ){
-            sprintf(buff, "Hello world %d!  ", ii+50);
-            drawString(28, 32, buff, BLUE);
-            drawBar(64, 70, ii, BLUE);
-            int fps = 40000000/_CP0_GET_COUNT();
-            sprintf(buff, "%d fps", fps);
-            drawString(85, 100, buff, BLUE);
-            while(_CP0_GET_COUNT() < 8000000) {;}
-            _CP0_SET_COUNT(0);
-            
+        
+        
+    }
+}
+
+void init_gyro(){ 
+    i2c_master_start();
+    i2c_master_send(SLVADR<<1|0); // write the address, or'ed with a 0 to indicate writing
+    i2c_master_send(0x10); // CRTL1_XL
+    i2c_master_send(0b10000010);
+    i2c_master_send(0b10001000);
+    i2c_master_stop();
+}
+
+char getData(char * data){
+    
+    i2c_master_start(); // make the start bit
+    i2c_master_send(SLVADR<<1|0); // write the address, shifted left by 1, or'ed with a 0 to indicate writing
+    i2c_master_send(0x22); // the register to read from
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send(SLVADR<<1|1); // write the address, shifted left by 1, or'ed with a 1 to indicate reading
+    
+    int ii;
+    for (ii = 0; ii<12; ii++){
+        data[ii] = i2c_master_recv(); // save the value returned
+        if(ii<11){
+            i2c_master_ack(0);
         }
     }
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop(); // make the stop bit
+    
+}
+
+char getValue(char r){
+    i2c_master_start(); // make the start bit
+    i2c_master_send(SLVADR<<1|0); // write the address, shifted left by 1, or'ed with a 0 to indicate writing
+    i2c_master_send(r); // the register to read from
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send(SLVADR<<1|1);
+    r = i2c_master_recv();
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop();
 }
 
 void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color){
