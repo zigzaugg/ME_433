@@ -164,6 +164,8 @@ static const char ASCII[96][5] = {
 #define CYAN      0x07FF
 #define MAGENTA   0xF81F
 #define YELLOW    0xFFE0
+#define BCKGND MAGENTA
+#define TXT YELLOW
 
 static unsigned char pGammaSet[15]= {0x36,0x29,0x12,0x22,0x1C,0x15,0x42,0xB7,0x2F,0x13,0x12,0x0A,0x11,0x0B,0x06};
 static unsigned char nGammaSet[15]= {0x09,0x16,0x2D,0x0D,0x13,0x15,0x40,0x48,0x53,0x0C,0x1D,0x25,0x2E,0x34,0x39};
@@ -176,5 +178,9 @@ void LCD_init(void); // send the initializations to the LCD
 void LCD_drawPixel(unsigned short, unsigned short, unsigned short); // set the x,y pixel to a color
 void LCD_setAddr(unsigned short, unsigned short, unsigned short, unsigned short); // set the memory address you are writing to
 void LCD_clearScreen(unsigned short); // set the color of every pixel
+void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color);
+void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color);
+void drawBar(unsigned short x0, unsigned short y0, short len, unsigned short color);
+void drawVertBar(unsigned short x0, unsigned short y0, short len, unsigned short color);
 
 #endif

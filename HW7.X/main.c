@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "i2c.h"
 #include "ili9163c.h"
+#include "imu03a.h"
 
 // DEVCFG0
 #pragma config DEBUG = 0b10 // no debugging
@@ -41,16 +42,6 @@
 
 #define LED LATAbits.LATA4 
 #define PUSH_BUTTON PORTBbits.RB4
-#define BCKGND MAGENTA
-#define TXT YELLOW
-#define SLVADR 0b1101011
-
-void init_gyro(void);
-void setExpander(char pin, char level);
-char getValue(char r);
-void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color);
-void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color);
-void drawBar(unsigned short x0, unsigned short y0, short len, unsigned short color);
 
 int main() {
     TRISAbits.TRISA4=0;
@@ -78,100 +69,41 @@ int main() {
     ANSELBbits.ANSB3 = 0;
     
     i2c_master_setup();
+    init_gyro();
     
     __builtin_enable_interrupts();
 
     char buff[20];
-    char r;
+    char r, r1, r2;
     LCD_clearScreen(BCKGND);
     
     
-    /*r = getValue();
-    sprintf(buff, "who: %i", r);
-    drawString(45, 45, buff, BLUE);
-    LED = 1;*/
+    r = getValue(0x0F);
+    sprintf(buff, "who: %i", r); //should return 105 (0b01101001)
+    //drawString(45, 45, buff, BLUE);
+    LED = 1;
+    
+    short Data[14];
+    short temp, xg, yg, zg, xac, yac, zac;
     
     while(1){
         
+        _CP0_SET_COUNT(0);
+        getData(Data);
+        xac = Data[8]|(Data[9]<<8);
+        yac = Data[10]|(Data[11]<<8);
         
-    }
-}
 
-void init_gyro(){ 
-    i2c_master_start();
-    i2c_master_send(SLVADR<<1|0); // write the address, or'ed with a 0 to indicate writing
-    i2c_master_send(0x10); // CRTL1_XL
-    i2c_master_send(0b10000010);
-    i2c_master_send(0b10001000);
-    i2c_master_stop();
-}
-
-char getData(char * data){
-    
-    i2c_master_start(); // make the start bit
-    i2c_master_send(SLVADR<<1|0); // write the address, shifted left by 1, or'ed with a 0 to indicate writing
-    i2c_master_send(0x22); // the register to read from
-    i2c_master_restart(); // make the restart bit
-    i2c_master_send(SLVADR<<1|1); // write the address, shifted left by 1, or'ed with a 1 to indicate reading
-    
-    int ii;
-    for (ii = 0; ii<12; ii++){
-        data[ii] = i2c_master_recv(); // save the value returned
-        if(ii<11){
-            i2c_master_ack(0);
-        }
-    }
-    i2c_master_ack(1); // make the ack so the slave knows we got it
-    i2c_master_stop(); // make the stop bit
-    
-}
-
-char getValue(char r){
-    i2c_master_start(); // make the start bit
-    i2c_master_send(SLVADR<<1|0); // write the address, shifted left by 1, or'ed with a 0 to indicate writing
-    i2c_master_send(r); // the register to read from
-    i2c_master_restart(); // make the restart bit
-    i2c_master_send(SLVADR<<1|1);
-    r = i2c_master_recv();
-    i2c_master_ack(1); // make the ack so the slave knows we got it
-    i2c_master_stop();
-}
-
-void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color){
-    int ii, jj;
-    for(ii = 0; ii<5; ii++){
-        for(jj = 0; jj<8; jj++){
-            int x = x0+ii;
-            int y = y0+jj;
-            if (x<128 && y<128){
-                if((ASCII[c-0x20][ii]>>jj)&1){
-                    LCD_drawPixel(x, y, color);
-                } else {
-                    LCD_drawPixel(x, y, BCKGND);
-                }
-            }
-        }
-    }
-}
-
-void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color){
-    int ii=0;
-    while(s[ii]){
-        char c = s[ii];
-        drawChar(x0+ii*6, y0, c, color);
-        ii++;
-    }
-}
-
-void drawBar(unsigned short x0, unsigned short y0, short len, unsigned short color){
-    int ii, jj;
-    for (ii= 1; ii<128; ii++){
-        for(jj = y0; jj<(y0+8); jj++){
-            if(((len>0)&&(ii<x0+len)&&(ii>x0))||(len<0)&&(ii<x0)&&(ii>x0+len)){
-                LCD_drawPixel(ii, jj, color);
-            }else{
-                LCD_drawPixel(ii, jj, BCKGND);
-            }
-        }
+        
+        /*sprintf(buff, "yac: %d  ", Data[4]);
+        drawString(45, 15, buff, BLUE);
+        sprintf(buff, "yac: %d  ", Data[5]);
+        drawString(45, 35, buff, BLUE);*/
+        
+        drawBar(64, 60, 60*Data[4]/32786, BLUE);
+        drawVertBar(60, 64, 60*Data[5]/32786, YELLOW);
+           
+        while(_CP0_GET_COUNT() < 4800000) {;}
+        LED = !LED;
     }
 }

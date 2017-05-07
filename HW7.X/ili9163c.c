@@ -189,3 +189,55 @@ void LCD_clearScreen(unsigned short color) {
 			LCD_data16(color);
 		}
 }
+
+void drawChar(unsigned short x0, unsigned short y0, char c, unsigned short color){
+    int ii, jj;
+    for(ii = 0; ii<5; ii++){
+        for(jj = 0; jj<8; jj++){
+            int x = x0+ii;
+            int y = y0+jj;
+            if (x<128 && y<128){
+                if((ASCII[c-0x20][ii]>>jj)&1){
+                    LCD_drawPixel(x, y, color);
+                } else {
+                    LCD_drawPixel(x, y, BCKGND);
+                }
+            }
+        }
+    }
+}
+
+void drawString(unsigned short x0, unsigned short y0, char *s, unsigned short color){
+    int ii=0;
+    while(s[ii]){
+        char c = s[ii];
+        drawChar(x0+ii*6, y0, c, color);
+        ii++;
+    }
+}
+
+void drawBar(unsigned short x0, unsigned short y0, short len, unsigned short color){
+    int ii, jj;
+    for (ii= 1; ii<128; ii++){
+        for(jj = y0; jj<(y0+4); jj++){
+            if(((len>0)&&(ii<x0+len)&&(ii>x0))||(len<0)&&(ii<x0)&&(ii>x0+len)){
+                LCD_drawPixel(ii, jj, color);
+            }else{
+                LCD_drawPixel(ii, jj, BCKGND);
+            }
+        }
+    }
+}
+
+void drawVertBar(unsigned short x0, unsigned short y0, short len, unsigned short color){
+    int ii, jj;
+    for (ii= 1; ii<128; ii++){
+        for(jj = x0; jj<(x0+4); jj++){
+            if(((len>0)&&(ii<y0+len)&&(ii>y0))||(len<0)&&(ii<y0)&&(ii>y0+len)){
+                LCD_drawPixel(jj, ii, color);
+            }else{
+                LCD_drawPixel(jj, ii, BCKGND);
+            }
+        }
+    }
+}
