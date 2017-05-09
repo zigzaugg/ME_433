@@ -54,10 +54,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 
 #include "app.h"
-#include "imu03a.h"
 #include "ili9163c.h"
 #include "i2c.h"
-#include <stdio.h>
+#include "imu03a.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -66,6 +65,10 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 #define LED LATAbits.LATA4 
 #define PUSH_BUTTON PORTBbits.RB4
+
+unsigned char accData[14]; 
+short temp, xg, yg, zg, xac, yac, zac;
+char buff[20];
 // *****************************************************************************
 /* Application Data
 
@@ -82,10 +85,6 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 */
 
 APP_DATA appData;
-
-char accData[14];
-short temp, xg, yg, zg, xac, yac, zac;
-char buff[20];
 
 // *****************************************************************************
 // *****************************************************************************
@@ -141,7 +140,6 @@ void APP_Initialize ( void )
     See prototype in app.h.
  */
 
-
 void APP_Tasks ( void )
 {
 
@@ -179,14 +177,17 @@ void APP_Tasks ( void )
             init_gyro();
 
             __builtin_enable_interrupts();
-
+            
             LCD_clearScreen(BCKGND);
-
-            /*char r;
-            r = getValue(0x0F);
-            sprintf(buff, "who: %i", r); //should return 105 (0b01101001)
-            drawString(45, 45, buff, BLUE);
-            LED = 1;*/
+            
+            bool appInitialized = true;
+       
+        
+            if (appInitialized)
+            {
+            
+                appData.state = APP_STATE_SERVICE_TASKS;
+            }
             break;
         }
 
@@ -197,16 +198,12 @@ void APP_Tasks ( void )
             xac = accData[8]|(accData[9]<<8);
             yac = accData[10]|(accData[11]<<8);
 
-            /*sprintf(buff, "x: %d  ", xac);
-            drawString(45, 15, buff, BLUE);
-            sprintf(buff, "y: %d  ", yac);
-            drawString(45, 35, buff, BLUE);*/
-
             drawBar(64, 60, 60*xac/32786, BLUE);
             drawVertBar(60, 64, 60*yac/32786, YELLOW);
 
             while(_CP0_GET_COUNT() < 4800000) {;}
             LED = !LED;
+            break;
         }
 
         /* TODO: implement your application state machine.*/
