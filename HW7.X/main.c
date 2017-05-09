@@ -62,46 +62,45 @@ int main() {
     // disable JTAG to get pins back
     DDPCONbits.JTAGEN = 0;
     
-    SPI1_init();
-    LCD_init();
-    
+    //allows for i2c I think
     ANSELBbits.ANSB2 = 0;
     ANSELBbits.ANSB3 = 0;
     
+    SPI1_init();
+    LCD_init();
     i2c_master_setup();
     init_gyro();
     
     __builtin_enable_interrupts();
 
     char buff[20];
-    char r, r1, r2;
     LCD_clearScreen(BCKGND);
     
-    
+    /*char r;
     r = getValue(0x0F);
     sprintf(buff, "who: %i", r); //should return 105 (0b01101001)
-    //drawString(45, 45, buff, BLUE);
-    LED = 1;
+    drawString(45, 45, buff, BLUE);
+    LED = 1;*/
     
-    short Data[14];
+    unsigned char accData[14]; 
     short temp, xg, yg, zg, xac, yac, zac;
     
     while(1){
         
         _CP0_SET_COUNT(0);
-        getData(Data);
-        xac = Data[8]|(Data[9]<<8);
-        yac = Data[10]|(Data[11]<<8);
+        getData(accData);
+        xac = accData[8]|(accData[9]<<8);
+        yac = accData[10]|(accData[11]<<8);
         
 
         
-        /*sprintf(buff, "yac: %d  ", Data[4]);
+        /*sprintf(buff, "x: %d  ", xac);
         drawString(45, 15, buff, BLUE);
-        sprintf(buff, "yac: %d  ", Data[5]);
+        sprintf(buff, "y: %d  ", yac);
         drawString(45, 35, buff, BLUE);*/
         
-        drawBar(64, 60, 60*Data[4]/32786, BLUE);
-        drawVertBar(60, 64, 60*Data[5]/32786, YELLOW);
+        drawBar(64, 60, 60*xac/32786, BLUE);
+        drawVertBar(60, 64, 60*yac/32786, YELLOW);
            
         while(_CP0_GET_COUNT() < 4800000) {;}
         LED = !LED;

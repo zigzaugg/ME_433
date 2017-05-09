@@ -54,13 +54,18 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 
 #include "app.h"
+#include "imu03a.h"
+#include "ili9163c.h"
+#include "i2c.h"
+#include <stdio.h>
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Global Data Definitions
 // *****************************************************************************
 // *****************************************************************************
-
+#define LED LATAbits.LATA4 
+#define PUSH_BUTTON PORTBbits.RB4
 // *****************************************************************************
 /* Application Data
 
@@ -77,6 +82,10 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 */
 
 APP_DATA appData;
+
+char accData[14];
+short temp, xg, yg, zg, xac, yac, zac;
+char buff[20];
 
 // *****************************************************************************
 // *****************************************************************************
@@ -132,8 +141,7 @@ void APP_Initialize ( void )
     See prototype in app.h.
  */
 
-#define LED LATAbits.LATA4 
-#define USR_BTN PORTBbits.RB4
+
 void APP_Tasks ( void )
 {
 
@@ -161,27 +169,44 @@ void APP_Tasks ( void )
             // disable JTAG to get pins back
             DDPCONbits.JTAGEN = 0;
 
+            //allows for i2c I think
+            ANSELBbits.ANSB2 = 0;
+            ANSELBbits.ANSB3 = 0;
+
+            SPI1_init();
+            LCD_init();
+            i2c_master_setup();
+            init_gyro();
+
             __builtin_enable_interrupts();
-            
-            bool appInitialized = true;
-       
-        
-            if (appInitialized)
-            {
-            
-                appData.state = APP_STATE_SERVICE_TASKS;
-            }
+
+            LCD_clearScreen(BCKGND);
+
+            /*char r;
+            r = getValue(0x0F);
+            sprintf(buff, "who: %i", r); //should return 105 (0b01101001)
+            drawString(45, 45, buff, BLUE);
+            LED = 1;*/
             break;
         }
 
         case APP_STATE_SERVICE_TASKS:
         {
             _CP0_SET_COUNT(0);
-            while(_CP0_GET_COUNT() < 2400) {
-                while(USR_BTN){;}
-            }
+            getData(accData);
+            xac = accData[8]|(accData[9]<<8);
+            yac = accData[10]|(accData[11]<<8);
+
+            /*sprintf(buff, "x: %d  ", xac);
+            drawString(45, 15, buff, BLUE);
+            sprintf(buff, "y: %d  ", yac);
+            drawString(45, 35, buff, BLUE);*/
+
+            drawBar(64, 60, 60*xac/32786, BLUE);
+            drawVertBar(60, 64, 60*yac/32786, YELLOW);
+
+            while(_CP0_GET_COUNT() < 4800000) {;}
             LED = !LED;
-            break;
         }
 
         /* TODO: implement your application state machine.*/
