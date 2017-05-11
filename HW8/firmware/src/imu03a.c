@@ -17,10 +17,10 @@ void init_gyro(){
     
 }
 
-void getData(unsigned char* data){
+void getData(unsigned char* accdata){
     int ii;
     for (ii = 0; ii < 14; ii++){
-        data[ii] = getValue(0x20+ii);
+        accdata[ii] = getValue(0x20+ii);
     }
 }
 

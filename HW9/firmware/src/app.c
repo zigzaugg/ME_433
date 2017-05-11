@@ -51,6 +51,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "app.h"
 #include <stdio.h>
 #include <xc.h>
+#include "i2c.h"
+#include "imu03a.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -62,6 +64,7 @@ uint8_t APP_MAKE_BUFFER_DMA_READY dataOut[APP_READ_BUFFER_SIZE];
 uint8_t APP_MAKE_BUFFER_DMA_READY readBuffer[APP_READ_BUFFER_SIZE];
 int len, i = 0;
 int startTime = 0;
+
 
 // *****************************************************************************
 /* Application Data
@@ -348,6 +351,9 @@ void APP_Tasks(void) {
     switch (appData.state) {
         case APP_STATE_INIT:
 
+            i2c_master_setup();
+            init_gyro();
+            
             /* Open the device layer */
             appData.deviceHandle = USB_DEVICE_Open(USB_DEVICE_INDEX_0, DRV_IO_INTENT_READWRITE);
 
@@ -360,6 +366,7 @@ void APP_Tasks(void) {
                 /* The Device Layer is not ready to be opened. We should try
                  * again later. */
             }
+            
 
             break;
 
@@ -395,6 +402,12 @@ void APP_Tasks(void) {
                     break;
                 }
             }
+            if(appData.readBuffer[0] ==0x72 && i==0){
+                i++;
+            } else if(i>100){
+                i = 0;
+            }
+            appData.readBuffer[0]=0;
 
             break;
 
@@ -408,7 +421,7 @@ void APP_Tasks(void) {
             /* Check if a character was received or a switch was pressed.
              * The isReadComplete flag gets updated in the CDC event handler. */
 
-            if (appData.isReadComplete || _CP0_GET_COUNT() - startTime > (48000000 / 2 / 5)) {
+            if (appData.isReadComplete || _CP0_GET_COUNT() - startTime > (48000000 / 2 / 100)) {
                 appData.state = APP_STATE_SCHEDULE_WRITE;
             }
 
@@ -427,12 +440,24 @@ void APP_Tasks(void) {
             appData.isWriteComplete = false;
             appData.state = APP_STATE_WAIT_FOR_WRITE_COMPLETE;
 
-            len = sprintf(dataOut, "%d\r\n", i);
-            i++;
+            
+            if(i>0){
+                unsigned char accData[14];
+                //getData(accData);
+                /*len = sprintf(dataOut, "%i\t%i\t%i\t%i\t%i\t%i\t%i\r\n", i, 
+                        accData[2]|(accData[3]<<8),accData[4]|(accData[5]<<8),
+                        accData[6]|(accData[7]<<8),accData[8]|(accData[9]<<8),
+                        accData[10]|(accData[11]<<8),accData[12]|(accData[13]<<8));*/
+                len = sprintf(dataOut, "%i\r\n", i);
+                i++;
+            } else {
+                len = sprintf(dataOut, "%i\r\n", i);
+            }
+          
             if (appData.isReadComplete) {
                 USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
                         &appData.writeTransferHandle,
-                        appData.readBuffer, 1,
+                        0, 1,
                         USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
             } else {
                 USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
@@ -440,6 +465,7 @@ void APP_Tasks(void) {
                         USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
                 startTime = _CP0_GET_COUNT();
             }
+
             break;
 
         case APP_STATE_WAIT_FOR_WRITE_COMPLETE:

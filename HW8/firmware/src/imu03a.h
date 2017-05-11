@@ -4,7 +4,7 @@
 #define IMUADR 0b1101011
 
 void init_gyro(void);
-void getData(unsigned char * data);
+void getData(unsigned char * accdata);
 char getValue(char r);
 
 #endif
