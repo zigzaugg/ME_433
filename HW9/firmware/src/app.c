@@ -444,6 +444,7 @@ void APP_Tasks(void) {
             if(i>0){
                 unsigned char accData[14];
                 //getData(accData);
+                getValue(0x09);
                 /*len = sprintf(dataOut, "%i\t%i\t%i\t%i\t%i\t%i\t%i\r\n", i, 
                         accData[2]|(accData[3]<<8),accData[4]|(accData[5]<<8),
                         accData[6]|(accData[7]<<8),accData[8]|(accData[9]<<8),

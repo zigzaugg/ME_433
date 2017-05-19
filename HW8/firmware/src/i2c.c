@@ -10,6 +10,10 @@ void i2c_master_setup(void) {
   I2C2BRG = 233;            // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2 
                                     // look up PGD for your PIC32
   I2C2CONbits.ON = 1;               // turn on the I2C2 module
+  
+
+    ANSELBbits.ANSB2 = 0;
+    ANSELBbits.ANSB3 = 0;
 }
 
 // Start a transmission on the I2C bus
