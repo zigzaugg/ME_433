@@ -14,9 +14,9 @@
                 </logicalFolder>
               </logicalFolder>
             </logicalFolder>
+            <itemPath>../src/mouse.h</itemPath>
             <itemPath>../src/system_config/default/system_config.h</itemPath>
             <itemPath>../src/system_config/default/system_definitions.h</itemPath>
-            <itemPath>../src/mouse.h</itemPath>
           </logicalFolder>
         </logicalFolder>
         <itemPath>../src/app.h</itemPath>
@@ -126,11 +126,11 @@
                 </logicalFolder>
               </logicalFolder>
             </logicalFolder>
+            <itemPath>../src/mouse.c</itemPath>
             <itemPath>../src/system_config/default/system_init.c</itemPath>
             <itemPath>../src/system_config/default/system_interrupt.c</itemPath>
             <itemPath>../src/system_config/default/system_exceptions.c</itemPath>
             <itemPath>../src/system_config/default/system_tasks.c</itemPath>
-            <itemPath>../src/mouse.c</itemPath>
           </logicalFolder>
         </logicalFolder>
         <itemPath>../src/app.c</itemPath>
@@ -230,7 +230,7 @@
         <property key="enable-unroll-loops" value="false"/>
         <property key="exclude-floating-point" value="false"/>
         <property key="extra-include-directories"
-                  value="../src;../src/system_config/default;../src/default;../../../../../../../../../Applications/microchip/harmony/v1_09/framework;../src/system_config/default/framework"/>
+                  value="../src;../src/system_config/default;../src/default;../src/system_config/default/framework;../../../../../../../../../Applications/microchip/harmony/v1_09/framework"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>

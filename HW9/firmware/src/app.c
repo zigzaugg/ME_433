@@ -443,16 +443,15 @@ void APP_Tasks(void) {
             
             if(i>0){
                 unsigned char accData[14];
-                //getData(accData);
-                getValue(0x09);
-                /*len = sprintf(dataOut, "%i\t%i\t%i\t%i\t%i\t%i\t%i\r\n", i, 
+                getData(accData);
+                len = sprintf(dataOut, "%i\t%i\t%i\t%i\t%i\t%i\t%i\r\n", i, 
                         accData[2]|(accData[3]<<8),accData[4]|(accData[5]<<8),
                         accData[6]|(accData[7]<<8),accData[8]|(accData[9]<<8),
-                        accData[10]|(accData[11]<<8),accData[12]|(accData[13]<<8));*/
-                len = sprintf(dataOut, "%i\r\n", i);
+                        accData[10]|(accData[11]<<8),accData[12]|(accData[13]<<8));
                 i++;
             } else {
-                len = sprintf(dataOut, "%i\r\n", i);
+                dataOut[0]=0;
+                len = 1;
             }
           
             if (appData.isReadComplete) {

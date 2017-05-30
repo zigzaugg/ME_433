@@ -126,8 +126,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if (c != null) {
             int thresh = 0; // comparison value
             int[] pixels = new int[bmp.getWidth()]; // pixels[] is the RGBA data
-            int startY = 200; // which row in the bitmap to analyze to read
-            int endY = 300;
+            int startY = 000; // which row in the bitmap to analyze to read
+            int endY = 400;
             for(int ii = startY; ii<endY; ii = ii+5) {
                 bmp.getPixels(pixels, 0, bmp.getWidth(), 0, ii, bmp.getWidth(), 1);
 
