@@ -95,7 +95,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setPreviewSize(640, 480);
         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY); // no autofocusing
-        parameters.setAutoExposureLock(true); // keep the white balance constant
+        //parameters.setAutoExposureLock(true); // keep the white balance constant
         mCamera.setParameters(parameters);
         mCamera.setDisplayOrientation(90); // rotate to portrait mode
 
@@ -126,7 +126,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         final Canvas c = mSurfaceHolder.lockCanvas();
         if (c != null) {
-            int thresh = 20; // comparison value
+            int thresh = 25; // comparison value
             int[] pixels = new int[bmp.getWidth()]; // pixels[] is the RGBA data
             int startY = 200; // which row in the bitmap to analyze to read
             int endY = 300;
@@ -139,7 +139,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                     int r = red(pixels[i]);
                     int b = blue(pixels[i]);
                     int cent = (r+g+b)/3;
-                    if ((Math.abs(g-cent)<thresh)&&(Math.abs(b-cent)<thresh)&&(Math.abs(b-cent)<thresh)&&(cent>140)&&(cent<240)){
+                    if ((r+20>g)&&(Math.abs(r-cent)<thresh+10)&&(Math.abs(g-cent)<thresh)&&(Math.abs(b+15-cent)<thresh+10)&&(cent>90)&&(cent<190)){
                         pixels[i] = rgb(0, 255, 0); // over write the pixel with pure green
                         if(ii==240){
                             centerOfMass += i;
